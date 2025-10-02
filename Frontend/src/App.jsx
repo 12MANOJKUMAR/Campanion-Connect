@@ -1,6 +1,8 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/common/Navbar";
+import Hero from "./pages/Hero";
+import Footer from "./components/common/Footer";
 
 const App = () => {
   return (
@@ -14,12 +16,15 @@ const App = () => {
       <main className="pt-16">
         {/* Your routes will go here */}
         <Routes>
-          <Route path="/" element={<div className="p-8">Home Page</div>} />
+          <Route path="/" element={<div className=""><Hero /></div>} />
           <Route path="/companions" element={<div className="p-8">Find Companions</div>} />
           <Route path="/messages" element={<div className="p-8">Messages</div>} />
           <Route path="/meetings" element={<div className="p-8">Meetings</div>} />
           <Route path="/profile" element={<div className="p-8">Profile</div>} />
         </Routes>
+        <div className="footer">
+          <Footer />
+        </div>
       </main>
     </div>
   );
