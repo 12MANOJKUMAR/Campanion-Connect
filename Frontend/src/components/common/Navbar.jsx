@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FaBars, FaTimes, FaHome, FaUsers, FaEnvelope, FaVideo, FaUser } from "react-icons/fa";
+import { FaBars, FaTimes, FaHome, FaInfoCircle, FaLightbulb, FaEnvelope, FaSignInAlt } from "react-icons/fa";
 import { useState } from "react";
 import companionLogo from "../../assets/companionlogo.png";
 
@@ -10,10 +10,10 @@ const Navbar = () => {
 
   const links = [
     { title: "Home", link: "/", icon: <FaHome /> },
-    { title: "Find Companions", link: "/companions", icon: <FaUsers /> },
-    { title: "Messages", link: "/messages", icon: <FaEnvelope /> },
-    { title: "Meetings", link: "/meetings", icon: <FaVideo /> },
-    { title: "Profile", link: "/profile", icon: <FaUser /> },
+    { title: "About", link: "/about", icon: <FaInfoCircle /> },
+    { title: "Features", link: "/features", icon: <FaLightbulb /> },
+    { title: "Contact", link: "/contact", icon: <FaEnvelope /> },
+    { title: "Sign In", link: "/profile", icon: <FaSignInAlt /> },
   ];
 
   return (
