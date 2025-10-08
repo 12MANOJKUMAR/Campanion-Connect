@@ -13,7 +13,7 @@ const Navbar = () => {
     { title: "About", link: "/about", icon: <FaInfoCircle /> },
     { title: "Features", link: "/features", icon: <FaLightbulb /> },
     { title: "Contact", link: "/contact", icon: <FaEnvelope /> },
-    { title: "Sign In", link: "/profile", icon: <FaSignInAlt /> },
+    { title: "Sign In", link: "/signin", icon: <FaSignInAlt /> },
   ];
 
   return (

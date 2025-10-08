@@ -3,6 +3,11 @@ import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/common/Navbar";
 import Hero from "./pages/Hero";
 import Footer from "./components/common/Footer";
+import About from "./pages/About";
+import Features from "./pages/Features";
+import Contact from "./pages/Contact";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 
 const App = () => {
   return (
@@ -16,11 +21,13 @@ const App = () => {
       <main className="pt-16">
         {/* Your routes will go here */}
         <Routes>
-          <Route path="/" element={<div className=""><Hero /></div>} />
-          <Route path="/companions" element={<div className="p-8">Find Companions</div>} />
+          <Route path="/" element={<Hero />} />
+          <Route path="/about" element={<About />} />
           <Route path="/messages" element={<div className="p-8">Messages</div>} />
-          <Route path="/meetings" element={<div className="p-8">Meetings</div>} />
-          <Route path="/profile" element={<div className="p-8">Profile</div>} />
+          <Route path="/features" element={<Features />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
         <div className="footer">
           <Footer />
