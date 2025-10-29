@@ -81,6 +81,24 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Mobile menu side-effects: lock scroll and reset submenus on close, support Esc to close
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      setProfileOpen(false);
+      setCompanionOpen(false);
+      setExploreOpen(false);
+    }
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
   // --- Data for Menus ---
   const baseLink = { title: "Home", link: "/", icon: <FaHome /> };
 
@@ -108,21 +126,22 @@ const Navbar = () => {
   // Login status should be managed by Redux state
 
   const handleProfileLinkClick = (link) => {
-    navigate(link);
-    setProfileOpen(false);
+    // Close drawer first to avoid overlay issues on mobile, then navigate
     setOpen(false);
+    setProfileOpen(false);
+    navigate(link);
   };
 
   const handleCompanionLinkClick = (link) => {
-    navigate(link);
-    setCompanionOpen(false);
     setOpen(false);
+    setCompanionOpen(false);
+    navigate(link);
   };
 
   const handleExploreInterestClick = (interestName) => {
-    navigate(`/explore/${encodeURIComponent(interestName)}`);
-    setExploreOpen(false);
     setOpen(false);
+    setExploreOpen(false);
+    navigate(`/explore/${encodeURIComponent(interestName)}`);
   };
 
   // Helper function for simple links
@@ -181,7 +200,7 @@ const Navbar = () => {
                   {/* My Companion Dropdown */}
                   <div className="relative" ref={companionRef}>
                     <button
-                      onClick={() => setCompanionOpen(!companionOpen)}
+                      onClick={() => { setCompanionOpen((v) => !v); setExploreOpen(false); setProfileOpen(false); }}
                       className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 group"
                     >
                       <span className="text-gray-400 group-hover:text-blue-400">
@@ -226,7 +245,7 @@ const Navbar = () => {
                   {/* Explore Dropdown */}
                   <div className="relative" ref={exploreRef}>
                     <button
-                      onClick={() => setExploreOpen(!exploreOpen)}
+                      onClick={() => { setExploreOpen((v) => !v); setCompanionOpen(false); setProfileOpen(false); }}
                       className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 group"
                     >
                       <span className="text-gray-400 group-hover:text-blue-400">
@@ -274,7 +293,7 @@ const Navbar = () => {
                   {/* Profile Dropdown */}
                   <div className="relative" ref={profileRef}>
                     <button
-                      onClick={() => setProfileOpen(!profileOpen)}
+                      onClick={() => { setProfileOpen((v) => !v); setCompanionOpen(false); setExploreOpen(false); }}
                       className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 group"
                     >
                       <span className="text-gray-400 group-hover:text-blue-400">
@@ -403,45 +422,93 @@ const Navbar = () => {
                   {user?.fullName || "User"}
                 </p>
               </div>
-              {renderLink(
-                { title: "Profile", link: "/profile", icon: <FaUserCircle /> },
-                true
-              )}
-              {renderLink(
-                { title: "Setting", link: "/setting", icon: <FaCog /> },
-                true
-              )}
+              {/* Account submenu toggle */}
+              <div>
+                <button
+                  onClick={() => { setProfileOpen((v) => !v); setCompanionOpen(false); setExploreOpen(false); }}
+                  className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                >
+                  <span className="text-xl text-gray-400 group-hover:text-blue-400">
+                    <FaUserCircle />
+                  </span>
+                  <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">
+                    Account
+                  </span>
+                  <FaChevronDown
+                    className={`text-gray-500 text-xs transition-transform ml-auto ${
+                      profileOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {profileOpen && (
+                  <div className="px-2 pb-2">
+                    <button
+                      onClick={() => handleProfileLinkClick('/profile')}
+                      className="w-full text-left flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                    >
+                      <FaUserCircle className="text-gray-400 group-hover:text-blue-400" />
+                      <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">Profile</span>
+                    </button>
+                    <button
+                      onClick={() => handleProfileLinkClick('/setting')}
+                      className="w-full text-left flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                    >
+                      <FaCog className="text-gray-400 group-hover:text-blue-400" />
+                      <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">Setting</span>
+                    </button>
+                  </div>
+                )}
+              </div>
               <hr className="border-white/10 my-2" />
 
-              {/* My Companion Section */}
-              <p className="px-4 pt-3 pb-1 text-sm font-semibold text-gray-400 uppercase">
-                My Companion
-              </p>
-              {user?.interests && user.interests.length > 0 ? (
-                user.interests.map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => {
-                      handleCompanionLinkClick(`/my-companion/${item}`);
-                    }}
-                    className="w-full text-left flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
-                  >
-                    <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">
-                      {item}
-                    </span>
-                  </button>
-                ))
-              ) : (
-                <div className="px-4 py-2 text-sm text-gray-400">
-                  No interests yet
-                </div>
-              )}
+              {/* My Companion Section (collapsible) */}
+              <div>
+                <button
+                  onClick={() => { setCompanionOpen((v) => !v); setProfileOpen(false); setExploreOpen(false); }}
+                  className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                >
+                  <span className="text-xl text-gray-400 group-hover:text-blue-400">
+                    <FaUsers />
+                  </span>
+                  <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">
+                    My Companion
+                  </span>
+                  <FaChevronDown
+                    className={`text-gray-500 text-xs transition-transform ml-auto ${
+                      companionOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {companionOpen && (
+                  <div className="px-2 pb-2">
+                    {user?.interests && user.interests.length > 0 ? (
+                      user.interests.map((item) => (
+                        <button
+                          key={item}
+                          onClick={() => {
+                            handleCompanionLinkClick(`/my-companion/${item}`);
+                          }}
+                          className="w-full text-left flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                        >
+                          <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">
+                            {item}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-sm text-gray-400">
+                        No interests yet
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <hr className="border-white/10 my-2" />
 
               {/* Explore Section */}
               <div>
                 <button
-                  onClick={() => setExploreOpen(!exploreOpen)}
+                  onClick={() => { setExploreOpen((v) => !v); setProfileOpen(false); setCompanionOpen(false); }}
                   className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
                 >
                   <span className="text-xl text-gray-400 group-hover:text-blue-400">

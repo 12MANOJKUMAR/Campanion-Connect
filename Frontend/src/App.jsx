@@ -8,11 +8,13 @@ import Footer from "./components/common/Footer";
 import About from "./pages/About";
 import Features from "./pages/Features";
 import Contact from "./pages/Contact";
+import Help from "./pages/Help";
+import Dashboard from "./pages/Dashboard";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import { checkAuthStatus } from "./store/authSlice";
 import Profile from "./components/profile/Profile";
-import Setting from "./components/profile/setting";
+import Setting from "./components/profile/Setting";
 import Explore from "./components/Dashboard/Explore";
 import CompanionsPage from "./components/Dashboard/MyCompanion";
 import ExplorePage from "./components/Dashboard/Explore";
@@ -54,6 +56,8 @@ const App = () => {
           <Route path="/messages" element={<div className="p-8">Messages</div>} />
           <Route path="/features" element={<Features />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/profile" element={<Profile />} />

@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import axios from 'axios';
+import { selectCurrentUser, setCredentials } from '../../store/authSlice';
 import { 
   FaUser, FaLock, FaBell, FaPalette, FaQuestionCircle, FaSignOutAlt,
   FaCamera, FaKey, FaEnvelope, FaGlobe, FaTrash, FaPause,
@@ -9,12 +12,14 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Setting = () => {
+  const dispatch = useDispatch();
+  const authedUser = useSelector(selectCurrentUser);
   const [activeSection, setActiveSection] = useState('account');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [settings, setSettings] = useState({
     // Account
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com',
+    name: '',
+    email: '',
     phone: '+91 98765 43210',
     language: 'English',
     
@@ -44,6 +49,37 @@ const Setting = () => {
     { id: 1, name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1' },
     { id: 2, name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2' }
   ]);
+
+  const [profileFields, setProfileFields] = useState({
+    fullName: '',
+    email: '',
+    location: '',
+    bio: '',
+    occupation: '',
+    profilePicture: ''
+  });
+  const [passwordFields, setPasswordFields] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [saving, setSaving] = useState(false);
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  useEffect(() => {
+    if (authedUser) {
+      setSettings((prev) => ({
+        ...prev,
+        name: authedUser.fullName || '',
+        email: authedUser.email || ''
+      }));
+      setProfileFields((prev) => ({
+        ...prev,
+        fullName: authedUser.fullName || '',
+        email: authedUser.email || '',
+        location: authedUser.location || '',
+        bio: authedUser.bio || '',
+        occupation: authedUser.occupation || '',
+        profilePicture: authedUser.profilePicture || ''
+      }));
+    }
+  }, [authedUser]);
 
   const sections = [
     { id: 'account', label: 'Account Settings', icon: FaUser },
@@ -75,6 +111,61 @@ const Setting = () => {
       }`}></span>
     </button>
   );
+
+  const handleUpdateProfile = async () => {
+    if (!authedUser?._id) return;
+    setSaving(true);
+    try {
+      // 1) Update profile fields
+      await axios.put(
+        `http://localhost:5000/api/user/update/${authedUser._id}`,
+        {
+          fullName: profileFields.fullName,
+          location: profileFields.location,
+          bio: profileFields.bio,
+          occupation: profileFields.occupation,
+          profilePicture: profileFields.profilePicture
+        },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+
+      // 2) Update credentials if changed or password set
+      if (
+        profileFields.email !== authedUser.email ||
+        profileFields.fullName !== authedUser.fullName ||
+        passwordFields.newPassword
+      ) {
+        if (passwordFields.newPassword && passwordFields.newPassword !== passwordFields.confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+
+        const credRes = await axios.put(
+          `http://localhost:5000/api/auth/credentials`,
+          {
+            email: profileFields.email,
+            fullName: profileFields.fullName,
+            currentPassword: passwordFields.currentPassword || undefined,
+            newPassword: passwordFields.newPassword || undefined,
+          },
+          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        );
+
+        if (credRes.data?.success) {
+          const { user, token: newToken } = credRes.data;
+          if (newToken) {
+            localStorage.setItem('token', newToken);
+          }
+          if (user) {
+            dispatch(setCredentials({ user, token: newToken || token }));
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Update failed:', e);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-800 py-8">
@@ -136,17 +227,28 @@ const Setting = () => {
                   {/* Profile Picture */}
                   <div className="flex items-center gap-6 pb-6 border-b border-slate-600">
                     <img 
-                      src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop" 
+                      src={profileFields.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(settings.name || 'User')}&background=random&size=150`} 
                       alt="Profile" 
                       className="w-24 h-24 rounded-full"
                     />
                     <div>
                       <h3 className="text-lg font-medium text-white mb-2">Profile Picture</h3>
                       <div className="flex gap-3">
-                        <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
+                        <button
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                          onClick={() => {
+                            const url = prompt('Enter image URL');
+                            if (url) {
+                              setProfileFields((p) => ({ ...p, profilePicture: url }));
+                            }
+                          }}
+                        >
                           <FaCamera /> Change Photo
                         </button>
-                        <button className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors">
+                        <button
+                          className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors"
+                          onClick={() => setProfileFields((p) => ({ ...p, profilePicture: '' }))}
+                        >
                           Remove
                         </button>
                       </div>
@@ -162,8 +264,8 @@ const Setting = () => {
                       <div className="flex gap-3">
                         <input 
                           type="text" 
-                          value={settings.name}
-                          onChange={(e) => handleSelectChange('name', e.target.value)}
+                          value={profileFields.fullName}
+                          onChange={(e) => { handleSelectChange('name', e.target.value); setProfileFields((p) => ({ ...p, fullName: e.target.value })); }}
                           className="flex-1 px-4 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
@@ -179,7 +281,8 @@ const Setting = () => {
                       <div className="flex gap-3">
                         <input 
                           type="email" 
-                          value={settings.email}
+                          value={profileFields.email}
+                          onChange={(e) => { handleSelectChange('email', e.target.value); setProfileFields((p) => ({ ...p, email: e.target.value })); }}
                           className="flex-1 px-4 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
@@ -205,6 +308,37 @@ const Setting = () => {
                     </div>
                   </div>
 
+                  {/* Basic Profile Fields */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>
+                      <input
+                        type="text"
+                        value={profileFields.location}
+                        onChange={(e) => setProfileFields((p) => ({ ...p, location: e.target.value }))}
+                        className="w-full px-4 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Occupation</label>
+                      <input
+                        type="text"
+                        value={profileFields.occupation}
+                        onChange={(e) => setProfileFields((p) => ({ ...p, occupation: e.target.value }))}
+                        className="w-full px-4 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Bio</label>
+                    <textarea
+                      value={profileFields.bio}
+                      onChange={(e) => setProfileFields((p) => ({ ...p, bio: e.target.value }))}
+                      rows={4}
+                      className="w-full px-4 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
                   {/* Language Preference */}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -224,17 +358,43 @@ const Setting = () => {
 
                   {/* Password */}
                   <div className="pt-6 border-t border-slate-600">
-                    <button className="w-full px-4 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors flex items-center justify-between">
-                      <span className="flex items-center gap-3">
-                        <FaKey />
-                        Change Password
-                      </span>
-                      <FaChevronRight />
-                    </button>
+                    <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                      <FaKey /> Change Password
+                    </h3>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <input
+                        type="password"
+                        placeholder="Current Password"
+                        value={passwordFields.currentPassword}
+                        onChange={(e) => setPasswordFields((p) => ({ ...p, currentPassword: e.target.value }))}
+                        className="w-full px-4 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="password"
+                        placeholder="New Password"
+                        value={passwordFields.newPassword}
+                        onChange={(e) => setPasswordFields((p) => ({ ...p, newPassword: e.target.value }))}
+                        className="w-full px-4 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="password"
+                        placeholder="Confirm New Password"
+                        value={passwordFields.confirmPassword}
+                        onChange={(e) => setPasswordFields((p) => ({ ...p, confirmPassword: e.target.value }))}
+                        className="w-full px-4 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
 
-                  {/* Account Actions */}
+                  {/* Update Button and Account Actions */}
                   <div className="pt-6 border-t border-slate-600 space-y-3">
+                    <button
+                      onClick={handleUpdateProfile}
+                      disabled={saving}
+                      className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {saving ? 'Updating...' : 'Update Profile'}
+                    </button>
                     <button className="w-full px-4 py-3 bg-orange-500/20 text-orange-400 rounded-lg hover:bg-orange-500/30 transition-colors flex items-center justify-between">
                       <span className="flex items-center gap-3">
                         <FaPause />

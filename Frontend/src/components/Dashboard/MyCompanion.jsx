@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, Users, Loader2 } from "lucide-react";
+import { MapPin, Users, Loader2, MessageCircle } from "lucide-react";
 import { useParams } from "react-router-dom";
 
 const CompanionsPage = () => {
@@ -84,8 +84,7 @@ const CompanionsPage = () => {
               }}
             >
               {/* Card Header with Image */}
-              <div className="relative h-48 bg-gradient-to-br from-slate-700 to-slate-600 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+              <div className="relative h-56 overflow-hidden">
                 <img
                   src={companion.profilePicture}
                   alt={companion.fullName}
@@ -96,25 +95,38 @@ const CompanionsPage = () => {
                     )}&background=random&size=400`;
                   }}
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+                <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg md:text-xl font-bold text-white">
+                      {companion.fullName}
+                    </h3>
+                    <div className="mt-1 flex items-center text-gray-200 text-xs md:text-sm">
+                      <MapPin className="w-4 h-4 mr-1 text-blue-400" />
+                      <span>{companion.location || "Location not specified"}</span>
+                    </div>
+                  </div>
+                  <button
+                    aria-label="Chat"
+                    className="p-3 rounded-full bg-blue-500/90 hover:bg-blue-600 text-white shadow-lg transition-colors"
+                    title="Chat"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Card Content */}
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-blue-400 transition-colors">
-                  {companion.fullName}
-                </h3>
-
-                <div className="flex items-center text-gray-300 mb-4">
-                  <MapPin className="w-4 h-4 mr-2 text-blue-400" />
-                  <span className="text-sm">
-                    {companion.location || "Location not specified"}
+              <div className="p-5 md:p-6">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2 text-xs text-gray-300">
+                    <span className="h-2 w-2 rounded-full bg-green-400"></span>
+                    Active now
                   </span>
+                  <button className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm">
+                    View Profile
+                  </button>
                 </div>
-
-                {/* Action Button */}
-                <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg">
-                  View Profile
-                </button>
               </div>
             </div>
           ))}
