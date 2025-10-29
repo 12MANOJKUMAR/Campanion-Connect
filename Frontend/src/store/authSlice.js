@@ -13,10 +13,21 @@ const CHECK_AUTH_URL = `${API_BASE_URL}/auth/me`;
 // --- Axios Instance with Default Config ---
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// Attach Authorization header automatically if token exists
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    delete config.headers.Authorization;
+  }
+  return config;
 });
 
 // --- Async Thunks for API Calls ---
@@ -35,11 +46,7 @@ export const checkAuthStatus = createAsyncThunk(
       }
 
       // ✅ Actual API call to verify token
-      const response = await axiosInstance.get('/auth/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axiosInstance.get('/auth/me');
 
       if (response.data.success) {
         return { user: response.data.user, token };
@@ -101,9 +108,7 @@ export const logoutUser = createAsyncThunk(
       const token = localStorage.getItem('token');
       
       // ✅ Call logout API with token
-      await axiosInstance.post('/auth/logout', {}, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      await axiosInstance.post('/auth/logout', {});
       
       // ✅ Clear all stored data
       localStorage.removeItem('token');

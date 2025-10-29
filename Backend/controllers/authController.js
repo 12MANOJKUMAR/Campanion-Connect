@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
 import { generateToken, setCookie } from '../utils/generateToken.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 // --- Register User ---
 const registerUser = asyncHandler(async (req, res) => {
@@ -26,8 +27,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // 3. If user created, log them in and send back data with token
   if (user) {
-    const token = generateToken(user._id);
-    setCookie(res, token); // Set HttpOnly cookie
+    const token = generateToken(user);
+    setCookie(res, token); // Optional cookie; primary auth via Bearer token
 
     res.status(201).json({
       success: true,
@@ -57,8 +58,8 @@ const loginUser = asyncHandler(async (req, res) => {
   // 2. Check if user exists AND password matches
   if (user && (await user.matchPassword(password))) {
     // 3. Generate JWT token
-    const token = generateToken(user._id);
-    setCookie(res, token); // Set HttpOnly cookie
+    const token = generateToken(user);
+    setCookie(res, token); // Optional cookie; primary auth via Bearer token
 
     // 4. Send user data back with success format
     res.status(200).json({
@@ -94,4 +95,25 @@ const logoutUser = asyncHandler(async (req, res) => {
   });
 });
 
-export { registerUser, loginUser, logoutUser };
+// --- Get Current Authenticated User ---
+const getMe = asyncHandler(async (req, res) => {
+  // `protect` middleware attaches `req.user`
+  if (!req.user) {
+    res.status(401);
+    throw new Error('Not authorized');
+  }
+
+  res.status(200).json({
+    success: true,
+    user: {
+      _id: req.user._id,
+      fullName: req.user.fullName,
+      email: req.user.email,
+      interests: req.user.interests || [],
+      profilePicture: req.user.profilePicture || '',
+      location: req.user.location || '',
+    },
+  });
+});
+
+export { registerUser, loginUser, logoutUser, getMe };

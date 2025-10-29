@@ -1,13 +1,14 @@
 import jwt from 'jsonwebtoken';
 
-const generateToken = (userId) => {
-  // Create the JWT
-  const token = jwt.sign(
-    { userId }, // Payload
-    process.env.JWT_SECRET, // Secret
-    { expiresIn: '30d' } // Expiration
-  );
+// Generate JWT with standard user payload for stateless auth
+const generateToken = (user) => {
+  const payload = {
+    userId: user._id?.toString ? user._id.toString() : user._id || user.userId,
+    email: user.email,
+    fullName: user.fullName,
+  };
 
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
   return token;
 };
 
