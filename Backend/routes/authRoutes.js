@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, loginUser, logoutUser, getMe } from '../controllers/authController.js';
+import { registerUser, loginUser, logoutUser, getMe, updateCredentials } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
@@ -14,5 +14,8 @@ router.post('/logout', logoutUser);
 
 // Verify token and return current user
 router.get('/me', protect, getMe);
+
+// Update credentials for current user
+router.put('/credentials', protect, updateCredentials);
 
 export default router;

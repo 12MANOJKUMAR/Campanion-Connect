@@ -116,4 +116,68 @@ const getMe = asyncHandler(async (req, res) => {
   });
 });
 
-export { registerUser, loginUser, logoutUser, getMe };
+// --- Update Credentials (email, fullName, password) ---
+const updateCredentials = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  if (!userId) {
+    res.status(401);
+    throw new Error('Not authorized');
+  }
+
+  const { email, fullName, currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // Handle email change - ensure uniqueness
+  if (email && email !== user.email) {
+    const existing = await User.findOne({ email });
+    if (existing && existing._id.toString() !== userId.toString()) {
+      res.status(409);
+      throw new Error('Email already in use');
+    }
+    user.email = email;
+  }
+
+  // Handle name change
+  if (fullName && fullName !== user.fullName) {
+    user.fullName = fullName;
+  }
+
+  // Handle password change - requires current password
+  if (newPassword) {
+    if (!currentPassword) {
+      res.status(400);
+      throw new Error('Current password required to set a new password');
+    }
+    const match = await user.matchPassword(currentPassword);
+    if (!match) {
+      res.status(401);
+      throw new Error('Current password is incorrect');
+    }
+    user.password = newPassword;
+  }
+
+  await user.save();
+
+  // Regenerate token to carry updated payload
+  const token = generateToken(user);
+
+  res.status(200).json({
+    success: true,
+    token,
+    user: {
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      interests: user.interests || [],
+      profilePicture: user.profilePicture || '',
+      location: user.location || '',
+    },
+  });
+});
+
+export { registerUser, loginUser, logoutUser, getMe, updateCredentials };

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { checkAuthStatus, selectCurrentUser } from '../../store/authSlice';
 import { 
   FaUserCircle, FaMapMarkerAlt, FaBriefcase, FaCalendar, FaEdit, 
   FaHeart, FaUsers, FaCamera, FaLock, FaUnlock, FaShare, FaEllipsisV,
@@ -8,6 +10,8 @@ import {
 import { motion } from 'framer-motion';
 
 const Profile = ({isOwnProfile = true}) => {
+  const dispatch = useDispatch();
+  const authedUser = useSelector(selectCurrentUser);
   const [activeTab, setActiveTab] = useState('posts');
   const [isEditing, setIsEditing] = useState(false);
   const [privacySettings, setPrivacySettings] = useState({
@@ -17,49 +21,37 @@ const Profile = ({isOwnProfile = true}) => {
     showInterests: true
   });
 
-  // Sample user data
-  const user = {
-    name: 'Sarah Johnson',
-    username: '@sarahjohnson',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
-    coverImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&h=400&fit=crop',
-    bio: 'Nature enthusiast 🌿 | Book lover 📚 | Coffee addict ☕ | Always looking for new adventures and meaningful connections',
-    location: 'Mumbai, India',
-    occupation: 'UX Designer',
-    joinedDate: 'January 2024',
-    email: 'sarah@example.com',
-    purpose: 'Looking for like-minded friends who love gardening, hiking, and deep conversations about life.',
-    interests: ['Photography', 'Traveling', 'Reading', 'Yoga', 'Cooking', 'Music'],
-    stats: {
-      connections: 156,
-      groups: 12,
-      posts: 48,
-      events: 23
-    },
-    achievements: [
-      { id: 1, title: 'Active Member', icon: FaStar, color: 'text-yellow-400', description: '30 days streak' },
-      { id: 2, title: 'Top Connector', icon: FaTrophy, color: 'text-orange-400', description: '100+ connections' },
-      { id: 3, title: 'Helpful', icon: FaHeart, color: 'text-red-400', description: 'Helped 50+ members' },
-      { id: 4, title: 'Event Organizer', icon: FaCalendar, color: 'text-blue-400', description: 'Organized 10+ events' },
-      { id: 5, title: 'Trusted Member', icon: FaShieldAlt, color: 'text-green-400', description: 'Verified profile' }
-    ],
-    mutualInterests: ['Photography', 'Traveling', 'Yoga'],
-    mutualFriends: 12,
-    compatibilityScore: 87,
-    gallery: [
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400&h=400&fit=crop'
-    ],
-    socialLinks: {
-      instagram: 'sarahjohnson',
-      twitter: 'sarahj',
-      linkedin: 'sarah-johnson'
+  // Derive user data from auth state; provide graceful fallbacks
+  const user = useMemo(() => {
+    const u = authedUser || {};
+    return {
+      name: u.fullName || 'User',
+      username: u.email ? `@${u.email.split('@')[0]}` : '@user',
+      avatar: u.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=random&size=256`,
+      coverImage: u.coverImage || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&h=400&fit=crop',
+      bio: u.bio || '',
+      location: u.location || '—',
+      occupation: u.occupation || '—',
+      joinedDate: u.createdAt ? new Date(u.createdAt).toLocaleString('default', { month: 'long', year: 'numeric' }) : '—',
+      email: u.email || '',
+      purpose: u.purpose || '',
+      interests: Array.isArray(u.interests) ? u.interests : [],
+      stats: { connections: u.connectionsCount || 0, groups: u.groupsCount || 0, posts: 0, events: 0 },
+      achievements: [],
+      mutualInterests: [],
+      mutualFriends: 0,
+      compatibilityScore: 0,
+      gallery: [],
+      socialLinks: u.socialLinks || {},
+    };
+  }, [authedUser]);
+
+  useEffect(() => {
+    // Ensure we have current user on first mount
+    if (!authedUser) {
+      dispatch(checkAuthStatus());
     }
-  };
+  }, [authedUser, dispatch]);
 
   const tabs = [
     { id: 'posts', label: 'Posts', count: user.stats.posts },
