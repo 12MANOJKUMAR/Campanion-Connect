@@ -1,27 +1,24 @@
+# Environment files
 .env
-node_modules
-.DS_Store
-npm
-yarn-error.log
-dist
-build
-.vscode
-.env
-.idea
+
+# Dependencies
+node_modules/
+
+# Build and distribution
+dist/
+build/
+out/
+
+# Logs
 *.log
-*.sqlite
-*.sqlite3
-coverage
-*.test.js
-*.spec.js
-*.test.ts
-*.spec.ts
+yarn-error.log
+
+# IDE and editor settings
+.vscode/
+.idea/
 *.iml
-out
-*.class
-*.jar
-*.war
-*.ear
+
+# Temporary / backup files
 *.swp
 *.swo
 *.bak
@@ -32,5 +29,25 @@ out
 *.pid
 *.seed
 
-# Ignore Mac system files
+# Test coverage and test files
+coverage/
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts
+
+# Databases
+*.sqlite
+*.sqlite3
+
+# Java-related build artifacts
+*.class
+*.jar
+*.war
+*.ear
+
+# System files
 .DS_Store
+
+# Package managers (if generated locally)
+npm
