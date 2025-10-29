@@ -1,18 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock, FaGoogle, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux'; //** */
 import { motion } from 'framer-motion';
+import { loginUser } from '../store/authSlice';
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // Get auth state from Redux store
+  const { status, error, isAuthenticated } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Navigate to a protected route
+      navigate('/dashboard'); // or '/messages'
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -20,30 +33,26 @@ const SignIn = () => {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
-    setError(''); // Clear error when user types
+    if (formError) setFormError(''); // Clear error when user types
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setFormError('');
 
-    // Simulate API call
-    setTimeout(() => {
-      if (formData.email === 'test@example.com' && formData.password === 'password') {
-        // Success - redirect to dashboard
-        navigate('/dashboard');
-      } else {
-        setError('Invalid email or password. Please try again.');
-      }
-      setLoading(false);
-    }, 1500);
+    if (!formData.email || !formData.password) {
+      setFormError('Please fill in both email and password.');
+      return;
+    }
+    dispatch(loginUser({ email: formData.email, password: formData.password }));
   };
 
-  const handleSocialLogin = (provider) => {
+ const handleSocialLogin = (provider) => {
     console.log(`Logging in with ${provider}`);
     // Implement social login logic here
   };
+
+  const isLoading = status === 'loading';
 
   return (
     <div className="min-h-screen bg-slate-800 flex items-center justify-center px-4 py-12">

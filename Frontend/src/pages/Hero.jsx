@@ -26,7 +26,7 @@ const Hero = () => {
 
             {/* CTA Button */}
             <Link
-              to="/companions"
+              to="/signin"
               className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-full hover:shadow-2xl hover:shadow-purple-500/25 transform hover:scale-105 transition-all duration-300 group"
             >
               Get Started
