@@ -14,6 +14,7 @@ import interestsRoutes from './routes/interestsRoutes.js';
 import usersInterestsRoutes from './routes/usersInterestsRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
+import connectionRequestRoutes from './routes/connectionRequestRoutes.js';
 
 // Load env variables
 dotenv.config();
@@ -23,7 +24,7 @@ conn();
 
 const app = express();
 const server = createServer(app);
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5000; // Changed to 5000 to match API calls
 
 // Initialize Socket.io
 initSocket(server);
@@ -61,6 +62,8 @@ app.use('/api/users', usersInterestsRoutes);
 app.use('/api/user', profileRoutes);
 // Message routes
 app.use('/api/messages', messageRoutes);
+// Connection request routes
+app.use('/api/connections', connectionRequestRoutes);
 
 
 // --- Error Handling Middleware ---

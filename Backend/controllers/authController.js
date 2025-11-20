@@ -5,7 +5,7 @@ import { protect } from '../middleware/authMiddleware.js';
 
 // --- Register User ---
 const registerUser = asyncHandler(async (req, res) => {
-  const { fullName, email, password, interests, profilePicture } = req.body;
+  const { fullName, email, password, interests, profilePicture, location } = req.body;
 
   // 1. Check if user already exists
   const userExists = await User.findOne({ email });
@@ -16,12 +16,23 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const defaultProfileImage = `https://ui-avatars.com/api/?name=${fullName}&background=random&size=256`;
 
+  // Parse interests if it's a JSON string
+  let parsedInterests = interests;
+  if (typeof interests === 'string') {
+    try {
+      parsedInterests = JSON.parse(interests);
+    } catch (e) {
+      parsedInterests = [];
+    }
+  }
+
   // 2. Create new user
   const user = await User.create({
     fullName,
     email,
     password, // Password will be hashed by the 'pre-save' middleware
-    interests,
+    interests: parsedInterests || [],
+    location: location || '',
     profilePicture : profilePicture || defaultProfileImage,
   });
 

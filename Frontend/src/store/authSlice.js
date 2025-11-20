@@ -141,15 +141,24 @@ export const registerUser = createAsyncThunk(
         return rejectWithValue('Please provide all required fields');
       }
 
-      console.log('Attempting registration for:', userData.email);
+      // ✅ Create FormData for file upload
+      const formData = new FormData();
+      formData.append('fullName', userData.fullName.trim());
+      formData.append('email', userData.email.trim().toLowerCase());
+      formData.append('location', userData.location?.trim() || '');
+      formData.append('password', userData.password);
+      formData.append('interests', JSON.stringify(userData.selectedInterests || []));
+      
+      // Append profile picture file if available
+      if (userData.profilePictureFile) {
+        formData.append('profilePicture', userData.profilePictureFile);
+      }
 
-      // ✅ API call with proper data mapping
-      const response = await axiosInstance.post('/auth/register', {
-        fullName: userData.fullName.trim(),
-        email: userData.email.trim().toLowerCase(),
-        password: userData.password,
-        interests: userData.selectedInterests || [],
-        profilePicture: userData.profilePicture || null,
+      // ✅ API call with FormData
+      const response = await axiosInstance.post('/auth/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       // ✅ Check response and store token

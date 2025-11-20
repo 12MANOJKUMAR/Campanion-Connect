@@ -1,20 +1,45 @@
 import React, { useState, useEffect } from "react";
 import { MapPin, Users, Loader2, MessageCircle } from "lucide-react";
 import { useParams } from "react-router-dom";
+import ProfileViewModal from "./ProfileViewModal";
 
 const ExplorePage = () => {
   const [companions, setCompanions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [count, setCount] = useState(0);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const params = useParams();
+
+  const handleViewProfile = (companion) => {
+    setSelectedUser(companion);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
+  };
 
   useEffect(() => {
     const fetchCompanions = async () => {
       setLoading(true); // Add this to show loading on subsequent fetches
       try {
+        const token = localStorage.getItem('token');
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(
-          `http://localhost:5000/api/users/mycompanions?interests=${params.id}`
+          `http://localhost:5000/api/users/explore?interests=${params.id}`,
+          {
+            headers,
+          }
         );
 
         const data = await response.json();
@@ -84,7 +109,7 @@ const ExplorePage = () => {
               }}
             >
             {/* Card Header with Image */}
-            <div className="relative h-56 overflow-hidden">
+            <div className="relative h-48 sm:h-56 overflow-hidden">
               <img
                 src={companion.profilePicture}
                 alt={companion.fullName}
@@ -96,34 +121,30 @@ const ExplorePage = () => {
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
-              <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg md:text-xl font-bold text-white">
-                    {companion.fullName}
-                  </h3>
-                  <div className="mt-1 flex items-center text-gray-200 text-xs md:text-sm">
-                    <MapPin className="w-4 h-4 mr-1 text-blue-400" />
-                    <span>{companion.location || "Location not specified"}</span>
+                <div className="absolute bottom-2 sm:bottom-3 left-3 sm:left-4 right-3 sm:right-4">
+                  <div className="min-w-0">
+                    <h3 className="text-base sm:text-lg md:text-xl font-bold text-white truncate">
+                      {companion.fullName}
+                    </h3>
+                    <div className="mt-1 flex items-center text-gray-200 text-xs sm:text-sm">
+                      <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 text-blue-400 flex-shrink-0" />
+                      <span className="truncate">{companion.location || "Location not specified"}</span>
+                    </div>
                   </div>
                 </div>
-                <button
-                  aria-label="Chat"
-                  className="p-3 rounded-full bg-blue-500/90 hover:bg-blue-600 text-white shadow-lg transition-colors"
-                  title="Chat"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                </button>
-              </div>
             </div>
 
             {/* Card Content */}
-            <div className="p-5 md:p-6">
-              <div className="flex items-center justify-between">
+            <div className="p-4 sm:p-5 md:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                 <span className="inline-flex items-center gap-2 text-xs text-gray-300">
                   <span className="h-2 w-2 rounded-full bg-green-400"></span>
                   Active now
                 </span>
-                <button className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm">
+                <button 
+                  onClick={() => handleViewProfile(companion)}
+                  className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-500/20 text-slate-300 border border-slate-500/30 rounded-lg hover:bg-slate-500/30 transition-colors text-xs sm:text-sm"
+                >
                   View Profile
                 </button>
               </div>
@@ -147,6 +168,13 @@ const ExplorePage = () => {
           </div>
         )}
       </div>
+
+      {/* Profile View Modal */}
+      <ProfileViewModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        user={selectedUser}
+      />
 
       <style jsx>{`
         @keyframes fadeInUp {

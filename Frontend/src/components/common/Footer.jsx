@@ -72,13 +72,6 @@ const Footer = () => {
                 <FaPhone className="text-blue-400 group-hover:scale-110 transition-transform" />
                 <span>+91-9876543210</span>
               </a>
-              <Link 
-                to="/help" 
-                className="flex items-center justify-center md:justify-start gap-3 hover:text-blue-400 transition-colors group"
-              >
-                <FaComments className="text-blue-400 group-hover:scale-110 transition-transform" />
-                <span>Live Chat / Help</span>
-              </Link>
             </div>
           </div>
 

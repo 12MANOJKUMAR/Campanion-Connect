@@ -15,6 +15,8 @@ import {
   FaUserCircle,
   FaCog,
   FaChevronDown,
+  FaHeart,
+  FaBell,
 } from "react-icons/fa";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -27,8 +29,12 @@ const Navbar = () => {
   const [companionOpen, setCompanionOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
+  const [interestOpen, setInterestOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const [allInterests, setAllInterests] = useState([]);
   const [interestsLoading, setInterestsLoading] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
@@ -37,6 +43,8 @@ const Navbar = () => {
   const companionRef = useRef(null);
   const profileRef = useRef(null);
   const exploreRef = useRef(null);
+  const interestRef = useRef(null);
+  const notificationRef = useRef(null);
 
   // ✅ Fix 1: Use token and user from Redux or localStorage
   const isLogin = !!user || !!localStorage.getItem("token");
@@ -49,17 +57,54 @@ const Navbar = () => {
         const response = await axios.get(
           "http://localhost:5000/api/interests/all"
         );
-        if (response.data.success) {
-          setAllInterests(response.data.data);
+        if (response.data && response.data.success) {
+          const interests = response.data.data || [];
+          setAllInterests(Array.isArray(interests) ? interests : []);
+        } else {
+          console.error("Invalid response structure:", response.data);
+          setAllInterests([]);
         }
       } catch (err) {
         console.error("Error fetching interests:", err);
+        setAllInterests([]);
       } finally {
         setInterestsLoading(false);
       }
     };
     fetchAllInterests();
   }, []);
+
+  // Fetch notifications
+  useEffect(() => {
+    if (!isLogin) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch('http://localhost:5000/api/connections/notifications', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          setNotifications(data.data || []);
+          setNotificationCount(data.count || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+    // Refresh notifications every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [isLogin]);
 
   // ✅ Fix 3: Click outside handler
   useEffect(() => {
@@ -76,6 +121,12 @@ const Navbar = () => {
       if (exploreRef.current && !exploreRef.current.contains(event.target)) {
         setExploreOpen(false);
       }
+      if (interestRef.current && !interestRef.current.contains(event.target)) {
+        setInterestOpen(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setNotificationOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -90,6 +141,8 @@ const Navbar = () => {
       setProfileOpen(false);
       setCompanionOpen(false);
       setExploreOpen(false);
+      setInterestOpen(false);
+      setNotificationOpen(false);
     }
 
     const onKeyDown = (e) => {
@@ -108,9 +161,7 @@ const Navbar = () => {
     { title: "Contact", link: "/contact", icon: <FaEnvelope /> },
   ];
 
-  const loggedInLinks = [
-    { title: "Help", link: "/help", icon: <FaQuestionCircle /> },
-  ];
+  const loggedInLinks = [];
 
   // ✅ Fix 4: Improved logout handler
   const handleLogout = () => {
@@ -142,6 +193,27 @@ const Navbar = () => {
     setOpen(false);
     setExploreOpen(false);
     navigate(`/explore/${encodeURIComponent(interestName)}`);
+  };
+
+  const handleInterestClick = (interestName) => {
+    setOpen(false);
+    setInterestOpen(false);
+    navigate(`/interest/${encodeURIComponent(interestName)}`);
+  };
+
+  const handleNotificationClick = (notification) => {
+    setNotificationOpen(false);
+    setOpen(false);
+    
+    // For connection_accepted notifications, navigate to the user's profile (no Accept/Reject needed)
+    if (notification.type === 'connection_accepted') {
+      navigate(`/profile/view/${notification.senderId._id || notification.senderId}`);
+    } else if (notification.connectionRequestId) {
+      // For connection requests, navigate with requestId for Accept/Reject
+      navigate(`/profile/view/${notification.senderId._id || notification.senderId}?requestId=${notification.connectionRequestId}`);
+    } else {
+      navigate(`/profile/view/${notification.senderId._id || notification.senderId}`);
+    }
   };
 
   // Helper function for simple links
@@ -261,15 +333,15 @@ const Navbar = () => {
                       />
                     </button>
                     {exploreOpen && (
-                      <div className="absolute top-12 left-0 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="absolute top-12 left-0 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden max-h-96 overflow-y-auto z-50">
                         {interestsLoading ? (
                           <div className="px-4 py-3 text-sm text-gray-400">
                             Loading...
                           </div>
-                        ) : allInterests.length > 0 ? (
-                          allInterests.map((item) => (
+                        ) : Array.isArray(allInterests) && allInterests.length > 0 ? (
+                          allInterests.map((item, index) => (
                             <button
-                              key={item}
+                              key={item || index}
                               onClick={() => handleExploreInterestClick(item)}
                               className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors group"
                             >
@@ -287,13 +359,125 @@ const Navbar = () => {
                     )}
                   </div>
 
+                  {/* Interest Dropdown */}
+                  <div className="relative" ref={interestRef}>
+                    <button
+                      onClick={() => { setInterestOpen((v) => !v); setCompanionOpen(false); setExploreOpen(false); setProfileOpen(false); }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                    >
+                      <span className="text-gray-400 group-hover:text-blue-400">
+                        <FaHeart />
+                      </span>
+                      <span className="text-sm font-medium group-hover:text-blue-400">
+                        Interest
+                      </span>
+                      <FaChevronDown
+                        className={`text-gray-500 text-xs transition-transform ${
+                          interestOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                    {interestOpen && (
+                      <div className="absolute top-12 left-0 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-50">
+                        {Array.isArray(user?.interests) && user.interests.length > 0 ? (
+                          user.interests.map((item, index) => (
+                            <button
+                              key={item || index}
+                              onClick={() => handleInterestClick(item)}
+                              className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors group"
+                            >
+                              <span className="text-sm text-gray-300 group-hover:text-blue-400">
+                                {item}
+                              </span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-4 py-3 text-sm text-gray-400">
+                            No interests yet
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Other Logged In Links */}
                   {loggedInLinks.map((item) => renderLink(item))}
+
+                  {/* Notifications Dropdown */}
+                  <div className="relative" ref={notificationRef}>
+                    <button
+                      onClick={() => { setNotificationOpen((v) => !v); setCompanionOpen(false); setExploreOpen(false); setInterestOpen(false); setProfileOpen(false); }}
+                      className="relative flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                    >
+                      <span className="text-gray-400 group-hover:text-blue-400 relative">
+                        <FaBell />
+                        {notificationCount > 0 && (
+                          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                            {notificationCount > 9 ? '9+' : notificationCount}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                    {notificationOpen && (
+                      <div className="absolute top-12 right-0 w-80 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden max-h-96 overflow-y-auto">
+                        <div className="p-3 border-b border-slate-700">
+                          <h3 className="text-sm font-semibold text-white">Notifications</h3>
+                        </div>
+                        {notifications.length > 0 ? (
+                          <div className="divide-y divide-slate-700">
+                            {notifications.map((notification) => {
+                              const sender = notification.senderId;
+                              return (
+                                <button
+                                  key={notification._id}
+                                  onClick={() => handleNotificationClick(notification)}
+                                  className="w-full text-left p-4 hover:bg-white/10 transition-colors group"
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <img
+                                      src={sender?.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(sender?.fullName || 'User')}&background=random&size=100`}
+                                      alt={sender?.fullName}
+                                      className="w-10 h-10 rounded-full object-cover"
+                                      onError={(e) => {
+                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(sender?.fullName || 'User')}&background=random&size=100`;
+                                      }}
+                                    />
+                                    <div className="flex-1">
+                                      <p className="text-sm text-white group-hover:text-blue-400">
+                                        {notification.type === 'connection_accepted' ? (
+                                          <>
+                                            <span className="font-semibold">{sender?.fullName || 'Someone'}</span>
+                                            {' '}accepted your connection request
+                                          </>
+                                        ) : (
+                                          <>
+                                            <span className="font-semibold">{sender?.fullName || 'Someone'}</span>
+                                            {' '}sent you a connection request
+                                          </>
+                                        )}
+                                      </p>
+                                      <p className="text-xs text-gray-400 mt-1">
+                                        {new Date(notification.createdAt).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center text-gray-400 text-sm">
+                            No new notifications
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Profile Dropdown */}
                   <div className="relative" ref={profileRef}>
                     <button
-                      onClick={() => { setProfileOpen((v) => !v); setCompanionOpen(false); setExploreOpen(false); }}
+                      onClick={() => { setProfileOpen((v) => !v); setCompanionOpen(false); setExploreOpen(false); setInterestOpen(false); setNotificationOpen(false); }}
                       className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 group"
                     >
                       <span className="text-gray-400 group-hover:text-blue-400">
@@ -317,6 +501,24 @@ const Navbar = () => {
                           <FaUserCircle className="text-gray-400 group-hover:text-blue-400" />
                           <span className="text-sm text-gray-300 group-hover:text-blue-400">
                             Profile
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handleProfileLinkClick("/my-requests")}
+                          className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors group"
+                        >
+                          <FaUserPlus className="text-gray-400 group-hover:text-blue-400" />
+                          <span className="text-sm text-gray-300 group-hover:text-blue-400">
+                            My Requests
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handleProfileLinkClick("/connections")}
+                          className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors group"
+                        >
+                          <FaUsers className="text-gray-400 group-hover:text-blue-400" />
+                          <span className="text-sm text-gray-300 group-hover:text-blue-400">
+                            Connections
                           </span>
                         </button>
                         <button
@@ -450,6 +652,20 @@ const Navbar = () => {
                       <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">Profile</span>
                     </button>
                     <button
+                      onClick={() => handleProfileLinkClick('/my-requests')}
+                      className="w-full text-left flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                    >
+                      <FaUserPlus className="text-gray-400 group-hover:text-blue-400" />
+                      <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">My Requests</span>
+                    </button>
+                    <button
+                      onClick={() => handleProfileLinkClick('/connections')}
+                      className="w-full text-left flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                    >
+                      <FaUsers className="text-gray-400 group-hover:text-blue-400" />
+                      <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">Connections</span>
+                    </button>
+                    <button
                       onClick={() => handleProfileLinkClick('/setting')}
                       className="w-full text-left flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
                     >
@@ -508,7 +724,7 @@ const Navbar = () => {
               {/* Explore Section */}
               <div>
                 <button
-                  onClick={() => { setExploreOpen((v) => !v); setProfileOpen(false); setCompanionOpen(false); }}
+                  onClick={() => { setExploreOpen((v) => !v); setProfileOpen(false); setCompanionOpen(false); setInterestOpen(false); }}
                   className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
                 >
                   <span className="text-xl text-gray-400 group-hover:text-blue-400">
@@ -529,10 +745,10 @@ const Navbar = () => {
                       <div className="px-4 py-2 text-sm text-gray-400">
                         Loading...
                       </div>
-                    ) : allInterests.length > 0 ? (
-                      allInterests.map((interest) => (
+                    ) : Array.isArray(allInterests) && allInterests.length > 0 ? (
+                      allInterests.map((interest, index) => (
                         <button
-                          key={interest}
+                          key={interest || index}
                           onClick={() => {
                             handleExploreInterestClick(interest);
                             setExploreOpen(false);
@@ -547,6 +763,51 @@ const Navbar = () => {
                     ) : (
                       <div className="px-4 py-2 text-sm text-gray-400">
                         No interests available
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <hr className="border-white/10 my-2" />
+
+              {/* Interest Section */}
+              <div>
+                <button
+                  onClick={() => { setInterestOpen((v) => !v); setProfileOpen(false); setCompanionOpen(false); setExploreOpen(false); }}
+                  className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                >
+                  <span className="text-xl text-gray-400 group-hover:text-blue-400">
+                    <FaHeart />
+                  </span>
+                  <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">
+                    Interest
+                  </span>
+                  <FaChevronDown
+                    className={`text-gray-500 text-xs transition-transform ml-auto ${
+                      interestOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {interestOpen && (
+                  <div className="px-2 pb-2">
+                    {Array.isArray(user?.interests) && user.interests.length > 0 ? (
+                      user.interests.map((item, index) => (
+                        <button
+                          key={item || index}
+                          onClick={() => {
+                            handleInterestClick(item);
+                            setInterestOpen(false);
+                          }}
+                          className="w-full text-left flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                        >
+                          <span className="text-lg font-medium text-gray-300 group-hover:text-blue-400">
+                            {item}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-sm text-gray-400">
+                        No interests yet
                       </div>
                     )}
                   </div>

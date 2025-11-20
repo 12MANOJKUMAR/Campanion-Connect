@@ -1,10 +1,11 @@
 import express from 'express';
 import { registerUser, loginUser, logoutUser, getMe, updateCredentials } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { upload, uploadProfilePicture } from '../middleware/uploadMiddleware.js';
 const router = express.Router();
 
 
-router.post('/register', registerUser);
+router.post('/register', upload.single('profilePicture'), uploadProfilePicture, registerUser);
 
 
 router.post('/login', loginUser);

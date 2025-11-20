@@ -18,10 +18,6 @@ const Dashboard = () => {
             <h3 className="text-xl font-semibold text-white mb-2">Settings</h3>
             <p className="text-gray-300">Edit profile and preferences.</p>
           </a>
-          <a href="/help" className="block bg-slate-700/70 rounded-2xl p-6 border border-slate-600 hover:border-blue-400/50 transition-colors">
-            <h3 className="text-xl font-semibold text-white mb-2">Help Center</h3>
-            <p className="text-gray-300">FAQs and guidance.</p>
-          </a>
         </div>
       </div>
     </div>

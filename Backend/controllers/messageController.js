@@ -39,6 +39,11 @@ export const sendMessage = asyncHandler(async (req, res) => {
     const { receiverId, message, type } = req.body;
     const senderId = req.user._id; // From auth middleware
 
+    if (!receiverId || !message) {
+      res.status(400);
+      throw new Error('Receiver ID and message are required');
+    }
+
     const newMessage = await Message.create({
       senderId,
       receiverId,
@@ -47,10 +52,48 @@ export const sendMessage = asyncHandler(async (req, res) => {
       imageUrl: req.file ? req.file.path : '',
     });
 
+    // Populate sender and receiver for real-time emit
+    await newMessage.populate('senderId', 'fullName profilePicture');
+    await newMessage.populate('receiverId', 'fullName profilePicture');
+
     // Emit real-time message via Socket.io
-    const { getIO } = await import('../utils/socket.js');
-    const io = getIO();
-    io.emit('new-message', newMessage);
+    try {
+      const { getIO, getOnlineUsers } = await import('../utils/socket.js');
+      const io = getIO();
+      
+      // Get online users map
+      const onlineUsers = getOnlineUsers ? getOnlineUsers() : null;
+      
+      // Format message data
+      const messageData = {
+        _id: newMessage._id,
+        senderId: {
+          _id: newMessage.senderId._id,
+          fullName: newMessage.senderId.fullName,
+          profilePicture: newMessage.senderId.profilePicture,
+        },
+        receiverId: {
+          _id: newMessage.receiverId._id,
+          fullName: newMessage.receiverId.fullName,
+          profilePicture: newMessage.receiverId.profilePicture,
+        },
+        message: newMessage.message,
+        type: newMessage.type,
+        imageUrl: newMessage.imageUrl,
+        read: newMessage.read,
+        createdAt: newMessage.createdAt,
+        updatedAt: newMessage.updatedAt,
+      };
+      
+      // Emit via send-message event which will route to specific receiver
+      io.emit('send-message', {
+        ...messageData,
+        receiverId: receiverId.toString(),
+        senderId: senderId.toString(),
+      });
+    } catch (socketError) {
+      // Continue even if socket fails
+    }
 
     res.status(201).json({
       success: true,
@@ -67,6 +110,11 @@ export const getChatHistory = asyncHandler(async (req, res) => {
   try {
     const { receiverId } = req.params;
     const userId = req.user._id;
+
+    if (!receiverId) {
+      res.status(400);
+      throw new Error('Receiver ID is required');
+    }
 
     const messages = await Message.find({
       $or: [

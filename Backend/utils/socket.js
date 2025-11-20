@@ -1,6 +1,9 @@
 import { Server } from 'socket.io';
 
 let io;
+const onlineUsers = new Map(); // userId -> socketId
+
+export const getOnlineUsers = () => onlineUsers;
 
 export const initSocket = (server) => {
   io = new Server(server, {
@@ -10,29 +13,50 @@ export const initSocket = (server) => {
     },
   });
 
-  const onlineUsers = new Map(); // userId -> socketId
-
   io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-
     // Add user to online users when they connect
     socket.on('add-user', (userId) => {
-      onlineUsers.set(userId, socket.id);
-      io.emit('online-users', Array.from(onlineUsers.keys()));
+      if (userId) {
+        onlineUsers.set(userId.toString(), socket.id);
+        socket.userId = userId.toString();
+        io.emit('online-users', Array.from(onlineUsers.keys()));
+      }
     });
 
-    // Handle sending messages
+    // Handle sending messages (real-time)
     socket.on('send-message', (data) => {
-      const receiverSocketId = onlineUsers.get(data.receiverId);
+      const receiverId = data.receiverId?.toString();
+      const senderId = data.senderId?.toString();
+      const receiverSocketId = onlineUsers.get(receiverId);
+      
+      // Format message for receiver
+      const receiverMessage = {
+        _id: data._id,
+        senderId: data.senderIdObj || data.senderId,
+        receiverId: data.receiverIdObj || data.receiverId,
+        message: data.message,
+        type: data.type || 'text',
+        imageUrl: data.imageUrl || '',
+        read: data.read || false,
+        createdAt: data.createdAt || new Date(),
+        updatedAt: data.updatedAt || new Date(),
+      };
       
       if (receiverSocketId) {
-        io.to(receiverSocketId).emit('receive-message', data);
+        // Send to receiver
+        io.to(receiverSocketId).emit('receive-message', receiverMessage);
+      }
+      
+      // Also send back to sender for confirmation (if sender is online)
+      const senderSocketId = onlineUsers.get(senderId);
+      if (senderSocketId) {
+        io.to(senderSocketId).emit('message-sent', receiverMessage);
       }
     });
 
     // Handle typing indicator
     socket.on('typing', (data) => {
-      const receiverSocketId = onlineUsers.get(data.receiverId);
+      const receiverSocketId = onlineUsers.get(data.receiverId?.toString());
       if (receiverSocketId) {
         io.to(receiverSocketId).emit('typing', {
           senderId: data.senderId,
@@ -41,15 +65,21 @@ export const initSocket = (server) => {
       }
     });
 
+    // Handle stop typing
+    socket.on('stop-typing', (data) => {
+      const receiverSocketId = onlineUsers.get(data.receiverId?.toString());
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit('stop-typing', {
+          senderId: data.senderId,
+        });
+      }
+    });
+
     // Handle disconnect
     socket.on('disconnect', () => {
-      console.log('User disconnected:', socket.id);
-      for (const [userId, socketId] of onlineUsers.entries()) {
-        if (socketId === socket.id) {
-          onlineUsers.delete(userId);
-          io.emit('online-users', Array.from(onlineUsers.keys()));
-          break;
-        }
+      if (socket.userId) {
+        onlineUsers.delete(socket.userId);
+        io.emit('online-users', Array.from(onlineUsers.keys()));
       }
     });
   });

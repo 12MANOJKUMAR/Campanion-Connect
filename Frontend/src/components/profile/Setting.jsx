@@ -58,6 +58,8 @@ const Setting = () => {
     occupation: '',
     profilePicture: ''
   });
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
   const [passwordFields, setPasswordFields] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [saving, setSaving] = useState(false);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -112,22 +114,59 @@ const Setting = () => {
     </button>
   );
 
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePictureFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setProfilePicturePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleUpdateProfile = async () => {
     if (!authedUser?._id) return;
     setSaving(true);
     try {
-      // 1) Update profile fields
-      await axios.put(
-        `http://localhost:5000/api/user/update/${authedUser._id}`,
-        {
-          fullName: profileFields.fullName,
-          location: profileFields.location,
-          bio: profileFields.bio,
-          occupation: profileFields.occupation,
-          profilePicture: profileFields.profilePicture
-        },
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-      );
+      // 1) Update profile fields - use FormData if file is present, otherwise use JSON
+      if (profilePictureFile) {
+        // Use FormData when uploading a new file
+        const formData = new FormData();
+        formData.append('fullName', profileFields.fullName);
+        formData.append('location', profileFields.location);
+        formData.append('bio', profileFields.bio);
+        formData.append('occupation', profileFields.occupation);
+        formData.append('profilePicture', profilePictureFile);
+
+        await axios.put(
+          `http://localhost:5000/api/user/update/${authedUser._id}`,
+          formData,
+          { 
+            headers: { 
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              'Content-Type': 'multipart/form-data',
+            } 
+          }
+        );
+      } else {
+        // Use JSON when no file is being uploaded
+        await axios.put(
+          `http://localhost:5000/api/user/update/${authedUser._id}`,
+          {
+            fullName: profileFields.fullName,
+            location: profileFields.location,
+            bio: profileFields.bio,
+            occupation: profileFields.occupation,
+            profilePicture: profileFields.profilePicture || undefined
+          },
+          { 
+            headers: { 
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              'Content-Type': 'application/json',
+            } 
+          }
+        );
+      }
 
       // 2) Update credentials if changed or password set
       if (
@@ -227,27 +266,29 @@ const Setting = () => {
                   {/* Profile Picture */}
                   <div className="flex items-center gap-6 pb-6 border-b border-slate-600">
                     <img 
-                      src={profileFields.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(settings.name || 'User')}&background=random&size=150`} 
+                      src={profilePicturePreview || profileFields.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(settings.name || 'User')}&background=random&size=150`} 
                       alt="Profile" 
-                      className="w-24 h-24 rounded-full"
+                      className="w-24 h-24 rounded-full object-cover"
                     />
                     <div>
                       <h3 className="text-lg font-medium text-white mb-2">Profile Picture</h3>
                       <div className="flex gap-3">
-                        <button
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                          onClick={() => {
-                            const url = prompt('Enter image URL');
-                            if (url) {
-                              setProfileFields((p) => ({ ...p, profilePicture: url }));
-                            }
-                          }}
-                        >
+                        <label className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 cursor-pointer">
                           <FaCamera /> Change Photo
-                        </button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfilePictureChange}
+                            className="hidden"
+                          />
+                        </label>
                         <button
                           className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors"
-                          onClick={() => setProfileFields((p) => ({ ...p, profilePicture: '' }))}
+                          onClick={() => {
+                            setProfileFields((p) => ({ ...p, profilePicture: '' }));
+                            setProfilePictureFile(null);
+                            setProfilePicturePreview(null);
+                          }}
                         >
                           Remove
                         </button>

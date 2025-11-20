@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  FaUser, FaEnvelope, FaLock, FaGoogle, FaGithub, FaEye, FaEyeSlash, 
+  FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, 
   FaCamera, FaCheck, FaHeart, FaRocket, FaStar, FaGift,
-  FaBolt, FaFire, FaShieldAlt, FaUsers, FaTrophy, FaPlane, FaBook, FaCode, FaMusic, FaGamepad 
+  FaBolt, FaFire, FaShieldAlt, FaUsers, FaTrophy, FaPlane, FaBook, FaCode, FaMusic, FaGamepad, FaMapMarkerAlt
 } from 'react-icons/fa'; 
 import { HiSparkles } from 'react-icons/hi';
 import { motion } from 'framer-motion';
@@ -30,12 +30,14 @@ const SignUp = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    location: '',
     password: '',
     confirmPassword: '',
     interests: '',
     agreeToTerms: false
   });
   const [profilePicture, setProfilePicture] = useState(null);
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -91,6 +93,7 @@ const SignUp = () => {
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setProfilePictureFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setProfilePicture(reader.result);
       reader.readAsDataURL(file);
@@ -110,6 +113,7 @@ const SignUp = () => {
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+    if (!formData.location.trim()) newErrors.location = 'Location is required';
     if (!formData.password) newErrors.password = 'Password is required';
     else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
     if (!formData.confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
@@ -131,9 +135,10 @@ const SignUp = () => {
     dispatch(registerUser({ 
       fullName: formData.fullName,
       email: formData.email,
+      location: formData.location,
       password: formData.password,
       selectedInterests,
-      profilePicture // Profile picture handling is complex, sent as is for context
+      profilePictureFile // Send the file object for Cloudinary upload
     }))
     .unwrap()
     .then(() => {
@@ -147,12 +152,6 @@ const SignUp = () => {
       setErrors({ ...errors, form: error || 'Registration failed. Please try again.' }); // Show general error
     });
   };
-
-  const handleSocialSignUp = (provider) => {
-    console.log(`Signing up with ${provider}`);
-  };
-
-  
 
   return (
     <div className="min-h-screen bg-slate-800 flex items-center justify-center px-4 py-12 relative overflow-hidden">
@@ -387,6 +386,36 @@ const SignUp = () => {
                       className="text-sm text-red-400 mt-1"
                     >
                       {errors.email}
+                    </motion.p>
+                  )}
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>
+                  <motion.div 
+                    whileHover={{ scale: 1.01 }}
+                    className="relative"
+                  >
+                    <FaMapMarkerAlt className="absolute left-3 top-3.5 text-gray-500" />
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-4 py-3 bg-slate-700/50 border ${
+                        errors.location ? 'border-red-500' : 'border-slate-600'
+                      } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
+                      placeholder="City, Country"
+                    />
+                  </motion.div>
+                  {errors.location && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-sm text-red-400 mt-1"
+                    >
+                      {errors.location}
                     </motion.p>
                   )}
                 </div>
@@ -677,42 +706,6 @@ const SignUp = () => {
                     'Sign Up'
                   )}
                 </motion.button>
-
-                {/* Social Sign Up */}
-                <div className="mt-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-slate-700"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-slate-800 text-gray-500">Or continue with</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => handleSocialSignUp('Google')}
-                      className="flex items-center justify-center px-4 py-2.5 bg-white rounded-lg shadow hover:shadow-lg transition-all"
-                    >
-                      <FaGoogle className="mr-2 text-red-500" />
-                      <span className="text-gray-700 font-medium">Google</span>
-                    </motion.button>
-                    
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => handleSocialSignUp('GitHub')}
-                      className="flex items-center justify-center px-4 py-2.5 bg-gray-900 rounded-lg shadow hover:shadow-lg transition-all border border-gray-800"
-                    >
-                      <FaGithub className="mr-2 text-white" />
-                      <span className="text-white font-medium">GitHub</span>
-                    </motion.button>
-                  </div>
-                </div>
 
                 {/* Sign In Link */}
                 <p className="text-center text-gray-400 mt-6">
