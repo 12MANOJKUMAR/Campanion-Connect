@@ -66,3 +66,4 @@ export const deleteFromCloudinary = async (publicId) => {
 
 export default cloudinary;
 
+

@@ -57,3 +57,4 @@ export const uploadProfilePicture = async (req, res, next) => {
 // Export multer instance for direct use if needed
 export { upload };
 
+

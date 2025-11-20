@@ -161,15 +161,9 @@ export const registerUser = createAsyncThunk(
         },
       });
 
-      // ✅ Check response and store token
+      // ✅ Check response but do NOT auto-login
       if (response.data.success) {
-        const { user, token } = response.data;
-        
-        if (token) {
-          localStorage.setItem('token', token);
-        }
-        
-        return { user, token };
+        return { message: response.data.message || 'Registration successful' };
       } else {
         throw new Error(response.data.message || 'Registration failed');
       }
@@ -343,12 +337,11 @@ const authSlice = createSlice({
         state.isAuthLoading = true;
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        const { user, token } = action.payload;
+      .addCase(registerUser.fulfilled, (state) => {
         state.status = 'succeeded';
-        state.isAuthenticated = !!token; // ✅ Based on token presence
-        state.user = user;
-        state.token = token;
+        state.isAuthenticated = false; // ✅ Require explicit login after signup
+        state.user = null;
+        state.token = null;
         state.isAuthLoading = false;
         state.error = null;
       })
