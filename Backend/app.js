@@ -35,7 +35,7 @@ initSocket(server);
 // This is crucial for allowing your React app (on a different port)
 // to communicate with this backend.
 app.use(cors({
-  origin: 'http://localhost:5173', // Your React app's address
+  origin: 'https://campanion-connect.vercel.app', // Your React app's address
   credentials: true, // This allows cookies to be sent
 }));
 
@@ -47,6 +47,11 @@ app.use(express.urlencoded({ extended: true }));
 // 3. Cookie Parser
 // Allows us to read cookies from the request
 app.use(cookieParser());
+
+app.get("/", (req, res) => {
+  res.send("Backend is running!");
+});
+
 
 
 // --- API Routes ---

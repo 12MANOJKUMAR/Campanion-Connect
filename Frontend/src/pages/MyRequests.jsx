@@ -21,7 +21,7 @@ const MyRequests = () => {
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch('http://localhost:5000/api/connections/sent', {
+        const response = await fetch('https://campanion-connect.onrender.com/api/connections/sent', {
           headers,
         });
 
@@ -60,7 +60,7 @@ const MyRequests = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`http://localhost:5000/api/connections/withdraw/${requestId}`, {
+      const response = await fetch(`https://campanion-connect.onrender.com/api/connections/withdraw/${requestId}`, {
         method: 'DELETE',
         headers,
       });
@@ -78,7 +78,7 @@ const MyRequests = () => {
         });
         
         // Refresh the requests list
-        const refreshResponse = await fetch('http://localhost:5000/api/connections/sent', {
+        const refreshResponse = await fetch('https://campanion-connect.onrender.com/api/connections/sent', {
           headers,
         });
         const refreshData = await refreshResponse.json();

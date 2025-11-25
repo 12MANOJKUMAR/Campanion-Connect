@@ -37,7 +37,7 @@ const InterestPage = () => {
 
         const interestName = decodeURIComponent(params.id);
         const response = await fetch(
-          `http://localhost:5000/api/users/interested-in/${encodeURIComponent(interestName)}`,
+          `https://campanion-connect.onrender.com/api/users/interested-in/${encodeURIComponent(interestName)}`,
           {
             headers,
           }

@@ -4,7 +4,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 // --- API Endpoints ---
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://campanion-connect.onrender.com/api';
 const REGISTER_URL = `${API_BASE_URL}/auth/register`;
 const LOGIN_URL = `${API_BASE_URL}/auth/login`;
 const LOGOUT_URL = `${API_BASE_URL}/auth/logout`;

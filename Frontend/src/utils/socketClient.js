@@ -7,7 +7,7 @@ let socket = null;
 const getBackendUrl = () => {
   // Use the same port as API calls (5000) since socket.io is on the same server
   // Hardcoded to localhost:5000 to match API calls
-  return 'http://localhost:5000';
+  return 'https://campanion-connect.onrender.com';
 };
 
 export const initSocketClient = (userId) => {
