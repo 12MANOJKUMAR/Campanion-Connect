@@ -8,7 +8,7 @@ export const getOnlineUsers = () => onlineUsers;
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: 'https://campanion-connect.vercel.app',
+      origin: 'https://campanion-connect.vercel.app || http://localhost:5173',
       credentials: true,
     },
   });

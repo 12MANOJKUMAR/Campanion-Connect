@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { MapPin, Users, Loader2, MessageCircle } from "lucide-react";
 import { useParams } from "react-router-dom";
 import ProfileViewModal from "../components/Dashboard/ProfileViewModal";
+import { buildApiUrl } from "../utils/apiConfig";
 
 const InterestPage = () => {
   const [users, setUsers] = useState([]);
@@ -37,7 +38,7 @@ const InterestPage = () => {
 
         const interestName = decodeURIComponent(params.id);
         const response = await fetch(
-          `https://campanion-connect.onrender.com/api/users/interested-in/${encodeURIComponent(interestName)}`,
+          buildApiUrl(`/users/interested-in/${encodeURIComponent(interestName)}`),
           {
             headers,
           }

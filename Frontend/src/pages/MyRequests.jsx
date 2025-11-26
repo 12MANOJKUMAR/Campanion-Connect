@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle, XCircle, UserPlus, X as XIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { buildApiUrl } from '../utils/apiConfig';
 
 const MyRequests = () => {
   const [requests, setRequests] = useState({ today: [], yesterday: [], older: [] });
@@ -21,7 +22,7 @@ const MyRequests = () => {
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch('https://campanion-connect.onrender.com/api/connections/sent', {
+        const response = await fetch(buildApiUrl('/connections/sent'), {
           headers,
         });
 
@@ -60,7 +61,7 @@ const MyRequests = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`https://campanion-connect.onrender.com/api/connections/withdraw/${requestId}`, {
+      const response = await fetch(buildApiUrl(`/connections/withdraw/${requestId}`), {
         method: 'DELETE',
         headers,
       });
@@ -78,7 +79,7 @@ const MyRequests = () => {
         });
         
         // Refresh the requests list
-        const refreshResponse = await fetch('https://campanion-connect.onrender.com/api/connections/sent', {
+        const refreshResponse = await fetch(buildApiUrl('/connections/sent'), {
           headers,
         });
         const refreshData = await refreshResponse.json();

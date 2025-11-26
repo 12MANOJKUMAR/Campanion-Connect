@@ -10,6 +10,7 @@ import {
   FaChevronRight, FaCheck, FaExclamationTriangle, FaEdit
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { buildApiUrl } from '../../utils/apiConfig';
 
 const Setting = () => {
   const dispatch = useDispatch();
@@ -139,7 +140,7 @@ const Setting = () => {
         formData.append('profilePicture', profilePictureFile);
 
         await axios.put(
-          `http://localhost:5000/api/user/update/${authedUser._id}`,
+          buildApiUrl(`/user/update/${authedUser._id}`),
           formData,
           { 
             headers: { 
@@ -151,7 +152,7 @@ const Setting = () => {
       } else {
         // Use JSON when no file is being uploaded
         await axios.put(
-          `http://localhost:5000/api/user/update/${authedUser._id}`,
+          buildApiUrl(`/user/update/${authedUser._id}`),
           {
             fullName: profileFields.fullName,
             location: profileFields.location,
@@ -179,7 +180,7 @@ const Setting = () => {
         }
 
         const credRes = await axios.put(
-          `http://localhost:5000/api/auth/credentials`,
+          buildApiUrl('/auth/credentials'),
           {
             email: profileFields.email,
             fullName: profileFields.fullName,

@@ -7,6 +7,7 @@ import {
   FaInstagram, FaTwitter, FaLinkedin
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import { buildApiUrl } from '../../utils/apiConfig';
 
 const Profile = ({isOwnProfile = true}) => {
   const dispatch = useDispatch();
@@ -51,7 +52,7 @@ const Profile = ({isOwnProfile = true}) => {
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch('http://localhost:5000/api/connections/list', {
+        const response = await fetch(buildApiUrl('/connections/list'), {
           headers,
         });
 

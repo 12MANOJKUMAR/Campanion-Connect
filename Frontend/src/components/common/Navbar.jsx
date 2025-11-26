@@ -23,6 +23,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/authSlice";
 import companionLogo from "../../assets/companionlogo.png";
 import axios from "axios";
+import { buildApiUrl } from "../../utils/apiConfig";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -54,9 +55,7 @@ const Navbar = () => {
     const fetchAllInterests = async () => {
       try {
         setInterestsLoading(true);
-        const response = await axios.get(
-          "http://localhost:5000/api/interests/all"
-        );
+        const response = await axios.get(buildApiUrl('/interests/all'));
         if (response.data && response.data.success) {
           const interests = response.data.data || [];
           setAllInterests(Array.isArray(interests) ? interests : []);
@@ -83,7 +82,7 @@ const Navbar = () => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const response = await fetch('http://localhost:5000/api/connections/notifications', {
+        const response = await fetch(buildApiUrl('/connections/notifications'), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -106,9 +105,14 @@ const Navbar = () => {
     return () => clearInterval(interval);
   }, [isLogin]);
 
-  // ✅ Fix 3: Click outside handler
+  // ✅ Fix 3: Click outside handler (desktop only so mobile accordions stay open)
   useEffect(() => {
     const handleClickOutside = (event) => {
+      const isDesktop =
+        typeof window !== "undefined" &&
+        window.matchMedia("(min-width: 768px)").matches;
+      if (!isDesktop) return;
+
       if (
         companionRef.current &&
         !companionRef.current.contains(event.target)
@@ -124,7 +128,10 @@ const Navbar = () => {
       if (interestRef.current && !interestRef.current.contains(event.target)) {
         setInterestOpen(false);
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setNotificationOpen(false);
       }
     };

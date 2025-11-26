@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { MapPin, Users, Loader2, MessageCircle } from "lucide-react";
 import { useParams } from "react-router-dom";
 import ProfileViewModal from "./ProfileViewModal";
+import { buildApiUrl } from "../../utils/apiConfig";
 
 const ExplorePage = () => {
   const [companions, setCompanions] = useState([]);
@@ -36,7 +37,7 @@ const ExplorePage = () => {
         }
 
         const response = await fetch(
-          `http://localhost:5000/api/users/explore?interests=${params.id}`,
+          buildApiUrl(`/users/explore?interests=${encodeURIComponent(params.id)}`),
           {
             headers,
           }

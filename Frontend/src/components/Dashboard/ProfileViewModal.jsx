@@ -3,6 +3,7 @@ import { X, MapPin, Heart, Circle, UserPlus, Check, X as XIcon, MessageCircle, C
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { buildApiUrl } from '../../utils/apiConfig';
 
 const ProfileViewModal = ({ isOpen, onClose, user, pendingRequestId, onRequestResponded, isConnected = false }) => {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ const ProfileViewModal = ({ isOpen, onClose, user, pendingRequestId, onRequestRe
           return;
         }
 
-        const response = await fetch(`http://localhost:5000/api/connections/check/${user._id}`, {
+        const response = await fetch(buildApiUrl(`/connections/check/${user._id}`), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -117,7 +118,7 @@ const ProfileViewModal = ({ isOpen, onClose, user, pendingRequestId, onRequestRe
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('http://localhost:5000/api/connections/send', {
+      const response = await fetch(buildApiUrl('/connections/send'), {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -173,7 +174,7 @@ const ProfileViewModal = ({ isOpen, onClose, user, pendingRequestId, onRequestRe
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`http://localhost:5000/api/connections/respond/${pendingRequestId}`, {
+      const response = await fetch(buildApiUrl(`/connections/respond/${pendingRequestId}`), {
         method: 'PUT',
         headers,
         body: JSON.stringify({ action }),
@@ -222,7 +223,7 @@ const ProfileViewModal = ({ isOpen, onClose, user, pendingRequestId, onRequestRe
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`http://localhost:5000/api/connections/withdraw/${pendingRequest._id}`, {
+      const response = await fetch(buildApiUrl(`/connections/withdraw/${pendingRequest._id}`), {
         method: 'DELETE',
         headers,
       });

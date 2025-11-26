@@ -4,6 +4,7 @@ import { Send, ArrowLeft, Loader2 } from 'lucide-react';
 import { initSocketClient, getSocketClient, disconnectSocketClient } from '../utils/socketClient.js';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import { buildApiUrl } from '../utils/apiConfig';
 
 const Chat = () => {
   const { userId } = useParams();
@@ -41,7 +42,7 @@ const Chat = () => {
       try {
         // Fetch chat user details
         const token = localStorage.getItem('token');
-        const userResponse = await fetch(`https://campanion-connect.onrender.com/api/users/${userId}`, {
+        const userResponse = await fetch(buildApiUrl(`/users/${userId}`), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -56,7 +57,7 @@ const Chat = () => {
         }
 
         // Fetch chat history
-        const messagesResponse = await fetch(`https://campanion-connect.onrender.com/api/messages/chat/${userId}`, {
+        const messagesResponse = await fetch(buildApiUrl(`/messages/chat/${userId}`), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -188,7 +189,7 @@ const Chat = () => {
       const token = localStorage.getItem('token');
 
       // Send via API (saves to database)
-      const response = await fetch('https://campanion-connect.onrender.com/api/messages/send', {
+      const response = await fetch(buildApiUrl('/messages/send'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

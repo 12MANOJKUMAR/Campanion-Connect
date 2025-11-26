@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import ProfileViewModal from '../components/Dashboard/ProfileViewModal';
 import { toast } from 'react-toastify';
+import { buildApiUrl } from '../utils/apiConfig';
 
 const Connections = () => {
   const [connections, setConnections] = useState({ today: [], yesterday: [], older: [] });
@@ -39,7 +40,7 @@ const Connections = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('https://campanion-connect.onrender.com/api/connections/list', {
+      const response = await fetch(buildApiUrl('/connections/list'), {
         headers,
       });
 
@@ -75,7 +76,7 @@ const Connections = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`https://campanion-connect.onrender.com/api/connections/disconnect/${connectionId}`, {
+      const response = await fetch(buildApiUrl(`/connections/disconnect/${connectionId}`), {
         method: 'DELETE',
         headers,
       });

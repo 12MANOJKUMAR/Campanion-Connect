@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import ProfileViewModal from '../components/Dashboard/ProfileViewModal';
+import { buildApiUrl } from '../utils/apiConfig';
 
 const ProfileView = () => {
   const { userId } = useParams();
@@ -23,7 +24,7 @@ const ProfileView = () => {
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch(`https://campanion-connect.onrender.com/api/users/${userId}`, {
+        const response = await fetch(buildApiUrl(`/users/${userId}`), {
           headers,
         });
 

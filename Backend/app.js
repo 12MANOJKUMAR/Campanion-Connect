@@ -32,12 +32,36 @@ initSocket(server);
 // --- Core Middleware ---
 
 // 1. CORS Configuration
-// This is crucial for allowing your React app (on a different port)
-// to communicate with this backend.
-app.use(cors({
-  origin: 'https://campanion-connect.vercel.app', // Your React app's address
-  credentials: true, // This allows cookies to be sent
-}));
+// Allow local dev (Vite) and deployed frontend (env override supported)
+const defaultOrigins = [
+  // Frontend deployments
+  'https://campanion-connect.vercel.app',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  // Backend deployments (for tools hitting APIs from same origin)
+  'https://campanion-connect.onrender.com',
+  'http://localhost:5000',
+];
+
+const envOrigins = process.env.FRONTEND_URLS
+  ? process.env.FRONTEND_URLS.split(',').map((url) => url.trim())
+  : [];
+
+const allowedOrigins = Array.from(new Set([...envOrigins, ...defaultOrigins]));
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
 
 // 2. Body Parsers
 // Allow us to accept JSON data in the request body
